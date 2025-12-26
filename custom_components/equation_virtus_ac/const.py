@@ -6,6 +6,7 @@ DOMAIN = "equation_virtus_ac"
 BASE_URL = "https://enki.api.devportal.adeo.cloud"
 API_KEY_AIRCO = "Nntj37xS5lih1qqFy8SbyHWKG5NEhSCm"
 API_KEY_NODE = "UBb0Kv6xXpG6bOvD8VZ9A63uxqQ4G1A3"
+API_KEY_BFF = "Bco7qBHRHOQiSVcEHdgS0rijpebMBwkB"
 
 # Keycloak Configuration
 AUTH_URL = "https://keycloak-prod.iot.leroymerlin.fr/realms/enki"

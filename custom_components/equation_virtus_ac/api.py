@@ -12,6 +12,7 @@ import aiohttp
 
 from .const import (
     API_KEY_AIRCO,
+    API_KEY_BFF,
     API_KEY_NODE,
     BASE_URL,
     CLIENT_ID,
@@ -350,22 +351,33 @@ class EquationVirtusACApi:
         url = BASE_URL + ENDPOINT_DASHBOARD.format(home_id=self._home_id) + "?hasGroups=true"
 
         try:
-            async with self._session.get(url, headers=self._get_headers(API_KEY_NODE)) as response:
+            async with self._session.get(url, headers=self._get_headers(API_KEY_BFF)) as response:
                 if response.status != 200:
+                    _LOGGER.error("Dashboard request failed with status %s", response.status)
                     return []
 
                 data = await response.json()
+                _LOGGER.debug("Dashboard response: %s", data)
                 devices = []
 
-                # Look for air conditioner nodes
-                for node in data.get("nodes", []):
-                    if node.get("icon") == "air_conditioners":
-                        devices.append({
-                            "node_id": node["id"],
-                            "label": node.get("label", "AC"),
-                            "icon": node.get("icon"),
-                        })
+                # Parse sections -> items -> metadata structure
+                for section in data.get("sections", []):
+                    for item in section.get("items", []):
+                        icon = item.get("icon", {})
+                        metadata = item.get("metadata", {})
 
+                        # Look for air conditioner devices
+                        if icon.get("name") == "air_conditioners" or metadata.get("deviceType") == "air_conditioners":
+                            node_id = metadata.get("nodeId")
+                            if node_id:
+                                devices.append({
+                                    "node_id": node_id,
+                                    "label": item.get("title", {}).get("label", "AC"),
+                                    "icon": icon.get("name"),
+                                    "device_id": metadata.get("deviceId"),
+                                })
+
+                _LOGGER.debug("Discovered devices: %s", devices)
                 return devices
 
         except (aiohttp.ClientError, KeyError) as err:

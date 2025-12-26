@@ -85,11 +85,14 @@ class EquationVirtusACConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
 
             # Discover devices
             self._devices = await self._api.discover_devices()
+            _LOGGER.debug("Discovered devices: %s", self._devices)
 
             if self._devices:
                 return await self.async_step_device()
             else:
-                errors["base"] = "no_devices"
+                # No devices found, go to manual entry
+                _LOGGER.warning("No devices discovered, proceeding to manual entry")
+                return await self.async_step_manual()
 
         return self.async_show_form(
             step_id="home",
