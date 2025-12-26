@@ -1,0 +1,20 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512">
+  <!-- Background circle -->
+  <circle cx="256" cy="256" r="240" fill="#1a73e8"/>
+  
+  <!-- AC unit body -->
+  <rect x="96" y="160" width="320" height="160" rx="16" fill="white"/>
+  
+  <!-- AC vents -->
+  <rect x="120" y="260" width="272" height="8" rx="4" fill="#1a73e8" opacity="0.3"/>
+  <rect x="120" y="280" width="272" height="8" rx="4" fill="#1a73e8" opacity="0.3"/>
+  <rect x="120" y="300" width="272" height="8" rx="4" fill="#1a73e8" opacity="0.3"/>
+  
+  <!-- Display panel -->
+  <rect x="340" y="180" width="56" height="40" rx="4" fill="#1a73e8" opacity="0.2"/>
+  
+  <!-- Air flow lines -->
+  <path d="M160 360 Q200 400 160 440" stroke="#64b5f6" stroke-width="8" fill="none" stroke-linecap="round"/>
+  <path d="M256 360 Q296 400 256 440" stroke="#64b5f6" stroke-width="8" fill="none" stroke-linecap="round"/>
+  <path d="M352 360 Q392 400 352 440" stroke="#64b5f6" stroke-width="8" fill="none" stroke-linecap="round"/>
+</svg>
