@@ -1,0 +1,8 @@
+{
+  "name": "Equation Virtus AC",
+  "domains": ["climate"],
+  "documentation": "https://github.com/bcamarneiro/equation-virtus-ac-api",
+  "issue_tracker": "https://github.com/bcamarneiro/equation-virtus-ac-api/issues",
+  "iot_class": "cloud_polling",
+  "render_readme": true
+}

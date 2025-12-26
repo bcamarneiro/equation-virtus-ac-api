@@ -1,8 +1,60 @@
 # Equation Virtus AC API
 
-Unofficial API documentation for Equation Virtus Air Conditioners (sold at Leroy Merlin), reverse-engineered from the Enki mobile app.
+Unofficial API documentation and Home Assistant integration for Equation Virtus Air Conditioners (sold at Leroy Merlin), reverse-engineered from the Enki mobile app.
 
 **Important**: This API is completely different from the Firebase-based API used by Equation radiators. The Virtus AC uses Adeo's cloud gateway with Keycloak OAuth2 authentication.
+
+## Home Assistant Integration
+
+This repository includes a custom Home Assistant integration for controlling your Equation Virtus AC.
+
+### Installation
+
+#### HACS (Recommended)
+
+1. Add this repository as a custom repository in HACS
+2. Search for "Equation Virtus AC" and install
+3. Restart Home Assistant
+4. Go to Settings → Devices & Services → Add Integration
+5. Search for "Equation Virtus AC"
+
+#### Manual Installation
+
+1. Copy the `custom_components/equation_virtus_ac` folder to your Home Assistant `config/custom_components/` directory
+2. Restart Home Assistant
+3. Go to Settings → Devices & Services → Add Integration
+4. Search for "Equation Virtus AC"
+
+### Configuration
+
+You will need:
+- **Email/Password**: Your Enki app credentials
+- **Home ID**: Your home ID from the Enki app (found via mitmproxy or app inspection)
+- **Node ID**: Will be auto-discovered, or enter manually
+
+### Features
+
+- Power on/off
+- Set target temperature (16-30°C)
+- HVAC modes: Cool, Heat, Dry, Fan Only, Auto
+- Fan speeds: Low, Medium, High, Auto
+- Swing modes: Vertical, Horizontal, Both, Off
+- Extra attributes: Health mode, Quiet mode, Sleep mode, Frost protection, Self-clean, Defrost status
+
+### Finding Your Home ID and Node ID
+
+The easiest way is using mitmproxy to intercept traffic from the Enki app:
+
+1. Set up mitmproxy on your computer
+2. Configure your phone to use the proxy
+3. Patch the Enki APK with `apk-mitm` to bypass SSL pinning
+4. Open the Enki app and check the requests
+
+Look for requests to:
+- `api-enki-mobile-bff-prod/v1/dashboard/homes/{home_id}` - contains your Home ID
+- `api-enki-equation-airco-prod/v1/equation-airco/{node_id}` - contains your Node ID
+
+---
 
 ## Device Information
 

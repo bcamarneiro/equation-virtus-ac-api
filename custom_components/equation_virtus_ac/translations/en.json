@@ -1,0 +1,44 @@
+{
+  "config": {
+    "step": {
+      "user": {
+        "title": "Equation Virtus AC",
+        "description": "Enter your Enki app credentials to connect your Equation Virtus AC.",
+        "data": {
+          "username": "Email",
+          "password": "Password"
+        }
+      },
+      "home": {
+        "title": "Home ID",
+        "description": "Enter your Home ID from the Enki app.\n\nYou can find this in the app settings or by using tools like mitmproxy to inspect network traffic.",
+        "data": {
+          "home_id": "Home ID"
+        }
+      },
+      "device": {
+        "title": "Select Device",
+        "description": "Select the AC device you want to add.",
+        "data": {
+          "node_id": "Device"
+        }
+      },
+      "manual": {
+        "title": "Manual Configuration",
+        "description": "Enter the Node ID manually if device discovery failed.",
+        "data": {
+          "node_id": "Node ID"
+        }
+      }
+    },
+    "error": {
+      "invalid_auth": "Invalid authentication. Please check your email and password.",
+      "no_devices": "No AC devices found in this home. You can try manual configuration.",
+      "invalid_device": "Could not connect to the device. Please check the Node ID.",
+      "cannot_connect": "Failed to connect to the Equation API."
+    },
+    "abort": {
+      "already_configured": "This device is already configured."
+    }
+  }
+}
