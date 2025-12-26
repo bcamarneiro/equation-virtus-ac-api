@@ -26,6 +26,29 @@
       "last_reported": {
         "name": "Last Reported"
       }
+    },
+    "select": {
+      "vertical_swing": {
+        "name": "Vertical Swing",
+        "state": {
+          "auto": "Auto",
+          "position_1": "Position 1",
+          "position_2": "Position 2",
+          "position_3": "Position 3",
+          "position_4": "Position 4"
+        }
+      },
+      "horizontal_swing": {
+        "name": "Horizontal Swing",
+        "state": {
+          "auto": "Auto",
+          "position_1": "Position 1",
+          "position_2": "Position 2",
+          "position_3": "Position 3",
+          "position_4": "Position 4",
+          "position_5": "Position 5"
+        }
+      }
     }
   },
   "config": {

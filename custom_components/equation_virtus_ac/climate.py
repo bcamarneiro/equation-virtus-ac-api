@@ -94,6 +94,10 @@ class EquationVirtusACClimate(CoordinatorEntity[EquationVirtusACCoordinator], Cl
         | ClimateEntityFeature.TURN_ON
         | ClimateEntityFeature.TURN_OFF
     )
+    _enable_turn_on_off_backwards_compatibility = False
+
+    # Optimistic state tracking
+    _optimistic_state: dict[str, Any] | None = None
 
     def __init__(
         self,
@@ -105,6 +109,11 @@ class EquationVirtusACClimate(CoordinatorEntity[EquationVirtusACCoordinator], Cl
         self._entry = entry
         self._attr_unique_id = entry.data["node_id"]
         self._attr_device_info = coordinator.device_info
+        self._optimistic_state = {}
+
+    def _clear_optimistic(self) -> None:
+        """Clear optimistic state after coordinator update."""
+        self._optimistic_state = {}
 
     @property
     def current_temperature(self) -> float | None:
@@ -116,6 +125,8 @@ class EquationVirtusACClimate(CoordinatorEntity[EquationVirtusACCoordinator], Cl
     @property
     def target_temperature(self) -> float | None:
         """Return the target temperature."""
+        if "target_temperature" in self._optimistic_state:
+            return self._optimistic_state["target_temperature"]
         if self.coordinator.data:
             return self.coordinator.data.target_temperature
         return None
@@ -123,6 +134,9 @@ class EquationVirtusACClimate(CoordinatorEntity[EquationVirtusACCoordinator], Cl
     @property
     def hvac_mode(self) -> HVACMode:
         """Return current HVAC mode."""
+        if "hvac_mode" in self._optimistic_state:
+            return self._optimistic_state["hvac_mode"]
+
         if not self.coordinator.data:
             return HVACMode.OFF
 
@@ -135,6 +149,8 @@ class EquationVirtusACClimate(CoordinatorEntity[EquationVirtusACCoordinator], Cl
     @property
     def fan_mode(self) -> str | None:
         """Return the fan mode."""
+        if "fan_mode" in self._optimistic_state:
+            return self._optimistic_state["fan_mode"]
         if self.coordinator.data:
             api_fan = self.coordinator.data.fan_speed
             return FAN_MODE_MAP.get(api_fan, "auto")
@@ -143,6 +159,9 @@ class EquationVirtusACClimate(CoordinatorEntity[EquationVirtusACCoordinator], Cl
     @property
     def swing_mode(self) -> str | None:
         """Return the swing mode."""
+        if "swing_mode" in self._optimistic_state:
+            return self._optimistic_state["swing_mode"]
+
         if not self.coordinator.data:
             return None
 
@@ -176,6 +195,10 @@ class EquationVirtusACClimate(CoordinatorEntity[EquationVirtusACCoordinator], Cl
 
     async def async_set_hvac_mode(self, hvac_mode: HVACMode) -> None:
         """Set HVAC mode."""
+        # Set optimistic state immediately
+        self._optimistic_state["hvac_mode"] = hvac_mode
+        self.async_write_ha_state()
+
         if hvac_mode == HVACMode.OFF:
             await self.coordinator.api.set_state(power=POWER_OFF)
         else:
@@ -187,32 +210,47 @@ class EquationVirtusACClimate(CoordinatorEntity[EquationVirtusACCoordinator], Cl
                 )
 
         await self.coordinator.async_request_refresh()
+        self._clear_optimistic()
 
     async def async_set_temperature(self, **kwargs: Any) -> None:
         """Set target temperature."""
         temperature = kwargs.get(ATTR_TEMPERATURE)
         if temperature is not None:
+            # Set optimistic state immediately
+            self._optimistic_state["target_temperature"] = temperature
+            self.async_write_ha_state()
+
             await self.coordinator.api.set_state(target_temperature=temperature)
             await self.coordinator.async_request_refresh()
+            self._clear_optimistic()
 
     async def async_set_fan_mode(self, fan_mode: str) -> None:
         """Set fan mode."""
+        # Set optimistic state immediately
+        self._optimistic_state["fan_mode"] = fan_mode
+        self.async_write_ha_state()
+
         api_fan = FAN_MODE_REVERSE_MAP.get(fan_mode)
         if api_fan:
             await self.coordinator.api.set_state(fan_speed=api_fan)
             await self.coordinator.async_request_refresh()
+            self._clear_optimistic()
 
     async def async_set_swing_mode(self, swing_mode: str) -> None:
         """Set swing mode."""
+        # Set optimistic state immediately
+        self._optimistic_state["swing_mode"] = swing_mode
+        self.async_write_ha_state()
+
         if swing_mode == "off":
-            h_mode = "OFF"
-            v_mode = "OFF"
+            h_mode = "NIV_1"
+            v_mode = "NIV_1"
         elif swing_mode == "vertical":
-            h_mode = "OFF"
+            h_mode = None
             v_mode = "AUTO"
         elif swing_mode == "horizontal":
             h_mode = "AUTO"
-            v_mode = "OFF"
+            v_mode = None
         else:  # both
             h_mode = "AUTO"
             v_mode = "AUTO"
@@ -222,13 +260,27 @@ class EquationVirtusACClimate(CoordinatorEntity[EquationVirtusACCoordinator], Cl
             swing_vertical=v_mode,
         )
         await self.coordinator.async_request_refresh()
+        self._clear_optimistic()
 
     async def async_turn_on(self) -> None:
         """Turn on the AC."""
+        # Set optimistic state - use last known mode or AUTO
+        last_mode = HVACMode.AUTO
+        if self.coordinator.data and self.coordinator.data.operating_mode:
+            last_mode = HVAC_MODE_MAP.get(self.coordinator.data.operating_mode, HVACMode.AUTO)
+        self._optimistic_state["hvac_mode"] = last_mode
+        self.async_write_ha_state()
+
         await self.coordinator.api.set_state(power=POWER_ON)
         await self.coordinator.async_request_refresh()
+        self._clear_optimistic()
 
     async def async_turn_off(self) -> None:
         """Turn off the AC."""
+        # Set optimistic state immediately
+        self._optimistic_state["hvac_mode"] = HVACMode.OFF
+        self.async_write_ha_state()
+
         await self.coordinator.api.set_state(power=POWER_OFF)
         await self.coordinator.async_request_refresh()
+        self._clear_optimistic()
