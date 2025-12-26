@@ -32,14 +32,74 @@ You will need:
 - **Home ID**: Your home ID from the Enki app (found via mitmproxy or app inspection)
 - **Node ID**: Will be auto-discovered, or enter manually
 
-### Features
+### Entities
 
-- Power on/off
-- Set target temperature (16-30°C)
-- HVAC modes: Cool, Heat, Dry, Fan Only, Auto
-- Fan speeds: Low, Medium, High, Auto
-- Swing modes: Vertical, Horizontal, Both, Off
-- Extra attributes: Health mode, Quiet mode, Sleep mode, Frost protection, Self-clean, Defrost status
+The integration creates the following entities per AC device:
+
+| Entity | Type | Description |
+|--------|------|-------------|
+| `climate.{name}` | Climate | Main AC control (power, temperature, mode, fan, swing) |
+| `switch.{name}_quiet_mode` | Switch | Enable/disable quiet mode |
+| `switch.{name}_sleep_mode` | Switch | Enable/disable sleep mode |
+| `switch.{name}_health_mode` | Switch | Enable/disable health/ionizer mode |
+| `switch.{name}_frost_protection` | Switch | Enable/disable frost protection |
+| `switch.{name}_self_clean` | Switch | Trigger self-cleaning cycle |
+| `binary_sensor.{name}_defrost` | Binary Sensor | Defrost status (read-only) |
+| `sensor.{name}_last_reported` | Sensor | Last update timestamp from device |
+
+### Climate Entity Features
+
+- **Power**: On/Off
+- **Temperature**: 16-30°C
+- **HVAC Modes**: Cool, Heat, Dry, Fan Only, Auto, Off
+- **Fan Speeds**: Low, Medium, High, Auto
+- **Swing Modes**: Vertical, Horizontal, Both, Off
+
+### Example Automations
+
+```yaml
+# Enable quiet mode at night
+automation:
+  - alias: "AC Quiet Mode at Night"
+    trigger:
+      - platform: time
+        at: "22:00:00"
+    condition:
+      - condition: state
+        entity_id: climate.ac
+        state: "cool"
+    action:
+      - service: switch.turn_on
+        target:
+          entity_id: switch.ac_quiet_mode
+
+# Turn off AC when leaving home
+automation:
+  - alias: "AC Off When Away"
+    trigger:
+      - platform: state
+        entity_id: person.bruno
+        from: "home"
+    action:
+      - service: climate.turn_off
+        target:
+          entity_id: climate.ac
+
+# Set comfortable temperature when arriving
+automation:
+  - alias: "AC On When Arriving"
+    trigger:
+      - platform: state
+        entity_id: person.bruno
+        to: "home"
+    action:
+      - service: climate.set_temperature
+        target:
+          entity_id: climate.ac
+        data:
+          temperature: 22
+          hvac_mode: cool
+```
 
 ### Finding Your Home ID and Node ID
 

@@ -1,4 +1,33 @@
 {
+  "entity": {
+    "switch": {
+      "quiet_mode": {
+        "name": "Quiet Mode"
+      },
+      "sleep_mode": {
+        "name": "Sleep Mode"
+      },
+      "health_mode": {
+        "name": "Health Mode"
+      },
+      "frost_protection_mode": {
+        "name": "Frost Protection"
+      },
+      "self_clean_mode": {
+        "name": "Self Clean"
+      }
+    },
+    "binary_sensor": {
+      "defrost": {
+        "name": "Defrost"
+      }
+    },
+    "sensor": {
+      "last_reported": {
+        "name": "Last Reported"
+      }
+    }
+  },
   "config": {
     "step": {
       "user": {

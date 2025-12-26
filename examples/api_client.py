@@ -178,6 +178,26 @@ class EquationVirtusAC:
         response.raise_for_status()
         return response.json()
 
+    def set_quiet_mode(self, enabled: bool) -> bool:
+        """Enable or disable quiet mode."""
+        return self.set_state(quiet_mode=enabled)
+
+    def set_sleep_mode(self, enabled: bool) -> bool:
+        """Enable or disable sleep mode."""
+        return self.set_state(sleep_mode=enabled)
+
+    def set_health_mode(self, enabled: bool) -> bool:
+        """Enable or disable health/ionizer mode."""
+        return self.set_state(health_mode=enabled)
+
+    def set_frost_protection(self, enabled: bool) -> bool:
+        """Enable or disable frost protection mode."""
+        return self.set_state(frost_protection_mode=enabled)
+
+    def set_self_clean(self, enabled: bool) -> bool:
+        """Enable or disable self-cleaning mode."""
+        return self.set_state(self_clean_mode=enabled)
+
 
 # Example usage
 if __name__ == "__main__":
