@@ -35,6 +35,7 @@ class EquationVirtusACConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
         self._username: str | None = None
         self._password: str | None = None
         self._home_id: str | None = None
+        self._homes: list[dict[str, Any]] = []
         self._devices: list[dict[str, Any]] = []
 
     async def async_step_user(
@@ -55,7 +56,22 @@ class EquationVirtusACConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
             )
 
             if await self._api.authenticate():
-                return await self.async_step_home()
+                # Auto-discover homes for the authenticated user
+                _LOGGER.debug("Authentication successful, discovering homes")
+                self._homes = await self._api.discover_homes()
+
+                if self._homes:
+                    _LOGGER.debug(
+                        "Auto-discovered %d home(s), showing selection",
+                        len(self._homes),
+                    )
+                    return await self.async_step_home_select()
+                else:
+                    # Legacy fallback: manual Home ID entry
+                    _LOGGER.warning(
+                        "No homes discovered via API, falling back to manual entry"
+                    )
+                    return await self.async_step_home()
             else:
                 errors["base"] = "invalid_auth"
 
@@ -73,10 +89,61 @@ class EquationVirtusACConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
             },
         )
 
+    async def async_step_home_select(
+        self, user_input: dict[str, Any] | None = None
+    ) -> FlowResult:
+        """Handle home selection from auto-discovered homes."""
+        errors: dict[str, str] = {}
+
+        if user_input is not None:
+            self._home_id = user_input[CONF_HOME_ID]
+            self._api._home_id = self._home_id
+
+            # Auto-discover devices in the selected home
+            self._devices = await self._api.discover_devices()
+            _LOGGER.debug(
+                "Discovered %d device(s) for home %s",
+                len(self._devices),
+                self._home_id,
+            )
+
+            if self._devices:
+                return await self.async_step_device()
+            else:
+                # No devices found, offer manual node entry
+                _LOGGER.warning(
+                    "No devices discovered in home %s, proceeding to manual entry",
+                    self._home_id,
+                )
+                return await self.async_step_manual()
+
+        # Build home selection options
+        home_options = {
+            home["home_id"]: _format_home_label(home)
+            for home in self._homes
+        }
+
+        return self.async_show_form(
+            step_id="home_select",
+            data_schema=vol.Schema(
+                {
+                    vol.Required(CONF_HOME_ID): vol.In(home_options),
+                }
+            ),
+            errors=errors,
+            description_placeholders={
+                "count": str(len(self._homes)),
+            },
+        )
+
     async def async_step_home(
         self, user_input: dict[str, Any] | None = None
     ) -> FlowResult:
-        """Handle home ID input."""
+        """Handle manual Home ID input (legacy fallback).
+
+        Deprecated: auto-discovery via async_step_home_select is preferred.
+        This step is kept for cases where the homes API is unavailable.
+        """
         errors: dict[str, str] = {}
 
         if user_input is not None:
@@ -103,14 +170,18 @@ class EquationVirtusACConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
             ),
             errors=errors,
             description_placeholders={
-                "info": "Enter your Home ID from the Enki app. You can find this in the app settings or by inspecting network traffic.",
+                "info": (
+                    "Enter your Home ID from the Enki app. "
+                    "You can find this in the app settings or by inspecting network traffic. "
+                    "This is a legacy fallback — auto-discovery is preferred."
+                ),
             },
         )
 
     async def async_step_device(
         self, user_input: dict[str, Any] | None = None
     ) -> FlowResult:
-        """Handle device selection."""
+        """Handle device selection from auto-discovered devices."""
         if user_input is not None:
             node_id = user_input[CONF_NODE_ID]
 
@@ -148,12 +219,19 @@ class EquationVirtusACConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
                     vol.Required(CONF_NODE_ID): vol.In(device_options),
                 }
             ),
+            description_placeholders={
+                "home_id": self._home_id or "unknown",
+            },
         )
 
     async def async_step_manual(
         self, user_input: dict[str, Any] | None = None
     ) -> FlowResult:
-        """Handle manual configuration."""
+        """Handle manual Node ID entry (legacy fallback).
+
+        Deprecated: auto-discovery via async_step_device is preferred.
+        This step is kept for cases where device discovery fails.
+        """
         errors: dict[str, str] = {}
 
         if user_input is not None:
@@ -189,4 +267,20 @@ class EquationVirtusACConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
                 }
             ),
             errors=errors,
+            description_placeholders={
+                "info": (
+                    "Enter the Node ID manually. "
+                    "This is a legacy fallback — auto-discovery is preferred."
+                ),
+            },
         )
+
+
+def _format_home_label(home: dict[str, Any]) -> str:
+    """Format a home entry into a readable label for the selection dropdown."""
+    name = home.get("name", "")
+    address = home.get("address")
+
+    if address:
+        return f"{name} — {address}"
+    return name or f"Home {home['home_id'][:8]}"

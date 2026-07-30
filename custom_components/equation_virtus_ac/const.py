@@ -19,6 +19,7 @@ ENDPOINT_CHANGE_STATE = "/api-enki-equation-airco-prod/v1/equation-airco/{node_i
 ENDPOINT_CHECK_ERROR = "/api-enki-equation-airco-prod/v1/equation-airco/{node_id}/check-airconditioner-error"
 ENDPOINT_NODE_INFO = "/api-enki-node-agg-prod/v1/nodes/{node_id}"
 ENDPOINT_DASHBOARD = "/api-enki-mobile-bff-prod/v1/dashboard/homes/{home_id}"
+ENDPOINT_HOMES = "/api-enki-mobile-bff-prod/v1/homes"
 
 # Configuration keys
 CONF_ACCESS_TOKEN = "access_token"

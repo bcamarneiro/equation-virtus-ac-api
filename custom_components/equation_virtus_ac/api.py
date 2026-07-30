@@ -20,6 +20,7 @@ from .const import (
     ENDPOINT_CHECK_ERROR,
     ENDPOINT_CHECK_STATE,
     ENDPOINT_DASHBOARD,
+    ENDPOINT_HOMES,
     ENDPOINT_NODE_INFO,
     TOKEN_URL,
 )
@@ -65,6 +66,15 @@ class DeviceInfo:
     model_number: str
     factory_id: str
     icon: str
+
+
+@dataclass
+class HomeInfo:
+    """Home/location information."""
+
+    home_id: str
+    name: str
+    address: str | None = None
 
 
 class EquationVirtusACApi:
@@ -338,6 +348,65 @@ class EquationVirtusACApi:
         except (aiohttp.ClientError, KeyError) as err:
             _LOGGER.error("Error getting device info: %s", err)
             return None
+
+    async def discover_homes(self) -> list[dict[str, Any]]:
+        """Discover homes/locations for the authenticated user.
+
+        Returns a list of dicts with home_id, name, and optionally address.
+        """
+        if not await self._ensure_token_valid():
+            return []
+
+        url = BASE_URL + ENDPOINT_HOMES
+
+        try:
+            async with self._session.get(
+                url, headers=self._get_headers(API_KEY_BFF)
+            ) as response:
+                if response.status != 200:
+                    _LOGGER.error(
+                        "Homes discovery failed with status %s", response.status
+                    )
+                    return []
+
+                data = await response.json()
+                _LOGGER.debug("Homes discovery response: %s", data)
+
+                homes: list[dict[str, Any]] = []
+
+                # The API may return a flat list or a nested structure.
+                # Handle both shapes.
+                items: list[dict[str, Any]] = []
+                if isinstance(data, list):
+                    items = data
+                elif isinstance(data, dict):
+                    items = data.get("homes", data.get("data", []))
+
+                for item in items:
+                    home_id = item.get("id") or item.get("homeId")
+                    if not home_id:
+                        continue
+
+                    name = (
+                        item.get("name")
+                        or item.get("label")
+                        or item.get("title", {}).get("label", "")
+                        or f"Home {home_id[:8]}"
+                    )
+                    address = item.get("address") or item.get("location")
+
+                    homes.append({
+                        "home_id": str(home_id),
+                        "name": str(name),
+                        "address": str(address) if address else None,
+                    })
+
+                _LOGGER.debug("Discovered homes: %s", homes)
+                return homes
+
+        except (aiohttp.ClientError, KeyError, ValueError) as err:
+            _LOGGER.error("Error discovering homes: %s", err)
+            return []
 
     async def discover_devices(self) -> list[dict[str, Any]]:
         """Discover AC devices in the home."""
