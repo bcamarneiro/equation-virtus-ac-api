@@ -18,6 +18,8 @@ from .const import (
     CONF_HOME_ID,
     CONF_NODE_ID,
     CONF_DEVICE_NAME,
+    CONF_TIMER_DEFAULT_DURATION,
+    DEFAULT_TIMER_DURATION,
     DOMAIN,
 )
 
@@ -36,6 +38,9 @@ class EquationVirtusACConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
         self._password: str | None = None
         self._home_id: str | None = None
         self._devices: list[dict[str, Any]] = []
+        self._pending_node_id: str | None = None
+        self._pending_device_name: str | None = None
+        self._timer_duration: int = DEFAULT_TIMER_DURATION
 
     async def async_step_user(
         self, user_input: dict[str, Any] | None = None
@@ -124,16 +129,10 @@ class EquationVirtusACConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
             await self.async_set_unique_id(node_id)
             self._abort_if_unique_id_configured()
 
-            return self.async_create_entry(
-                title=device_name,
-                data={
-                    CONF_USERNAME: self._username,
-                    CONF_PASSWORD: self._password,
-                    CONF_HOME_ID: self._home_id,
-                    CONF_NODE_ID: node_id,
-                    CONF_DEVICE_NAME: device_name,
-                },
-            )
+            self._pending_node_id = node_id
+            self._pending_device_name = device_name
+
+            return await self.async_step_timer()
 
         # Build device selection options
         device_options = {
@@ -168,16 +167,10 @@ class EquationVirtusACConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
             # Try to get device info to validate
             device_info = await self._api.get_device_info()
             if device_info:
-                return self.async_create_entry(
-                    title=device_info.label,
-                    data={
-                        CONF_USERNAME: self._username,
-                        CONF_PASSWORD: self._password,
-                        CONF_HOME_ID: self._home_id,
-                        CONF_NODE_ID: node_id,
-                        CONF_DEVICE_NAME: device_info.label,
-                    },
-                )
+                self._pending_node_id = node_id
+                self._pending_device_name = device_info.label
+
+                return await self.async_step_timer()
             else:
                 errors["base"] = "invalid_device"
 
@@ -189,4 +182,40 @@ class EquationVirtusACConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
                 }
             ),
             errors=errors,
+        )
+
+    async def async_step_timer(
+        self, user_input: dict[str, Any] | None = None
+    ) -> FlowResult:
+        """Handle timer default configuration."""
+        if user_input is not None:
+            self._timer_duration = user_input.get(
+                CONF_TIMER_DEFAULT_DURATION, DEFAULT_TIMER_DURATION
+            )
+
+            return self.async_create_entry(
+                title=self._pending_device_name,
+                data={
+                    CONF_USERNAME: self._username,
+                    CONF_PASSWORD: self._password,
+                    CONF_HOME_ID: self._home_id,
+                    CONF_NODE_ID: self._pending_node_id,
+                    CONF_DEVICE_NAME: self._pending_device_name,
+                    CONF_TIMER_DEFAULT_DURATION: self._timer_duration,
+                },
+            )
+
+        return self.async_show_form(
+            step_id="timer",
+            data_schema=vol.Schema(
+                {
+                    vol.Required(
+                        CONF_TIMER_DEFAULT_DURATION,
+                        default=DEFAULT_TIMER_DURATION,
+                    ): vol.All(vol.Coerce(int), vol.Range(min=1, max=1440)),
+                }
+            ),
+            description_placeholders={
+                "info": "Set the default timer duration in minutes. You can override this when calling the enki.timer service.",
+            },
         )

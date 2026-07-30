@@ -19,6 +19,8 @@ ENDPOINT_CHANGE_STATE = "/api-enki-equation-airco-prod/v1/equation-airco/{node_i
 ENDPOINT_CHECK_ERROR = "/api-enki-equation-airco-prod/v1/equation-airco/{node_id}/check-airconditioner-error"
 ENDPOINT_NODE_INFO = "/api-enki-node-agg-prod/v1/nodes/{node_id}"
 ENDPOINT_DASHBOARD = "/api-enki-mobile-bff-prod/v1/dashboard/homes/{home_id}"
+ENDPOINT_SCHEDULE = "/api-enki-equation-airco-prod/v1/equation-airco/{node_id}/schedule"
+ENDPOINT_TIMER = "/api-enki-equation-airco-prod/v1/equation-airco/{node_id}/timer"
 
 # Configuration keys
 CONF_ACCESS_TOKEN = "access_token"
@@ -27,6 +29,11 @@ CONF_HOME_ID = "home_id"
 CONF_NODE_ID = "node_id"
 CONF_DEVICE_NAME = "device_name"
 CONF_TOKEN_EXPIRES = "token_expires"
+CONF_TIMER_DEFAULT_DURATION = "timer_default_duration"
+CONF_SCHEDULE_EVENTS = "schedule_events"
+
+# Default timer duration (minutes)
+DEFAULT_TIMER_DURATION = 60
 
 # Operating modes
 HVAC_MODE_COOL = "COOL"
