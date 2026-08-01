@@ -45,8 +45,13 @@ FAN_AUTO = "AUTO"
 POWER_ON = "ON"
 POWER_OFF = "OFF"
 
+# Energy consumption endpoints
+ENDPOINT_ENERGY_CURRENT = "/api-enki-node-agg-prod/v1/nodes/{node_id}/energy/current"
+ENDPOINT_ENERGY_CONSUMPTION = "/api-enki-node-agg-prod/v1/nodes/{node_id}/energy/consumption"
+
 # Polling interval (seconds)
 SCAN_INTERVAL = 30
+ENERGY_SCAN_INTERVAL = 60
 
 # Temperature limits
 MIN_TEMP = 16
