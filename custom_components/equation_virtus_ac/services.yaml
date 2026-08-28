@@ -1,0 +1,140 @@
+schedule:
+  name: Set AC Schedule
+  description: Set a scheduled action for the AC unit.
+  target:
+    entity:
+      domain: climate
+      integration: equation_virtus_ac
+  fields:
+    time:
+      name: Time
+      description: Time for the schedule in HH:MM format.
+      required: true
+      example: "08:00"
+      selector:
+        time:
+    days:
+      name: Days
+      description: Days of the week the schedule should run.
+      required: true
+      example:
+        - mon
+        - tue
+        - wed
+      selector:
+        select:
+          multiple: true
+          options:
+            - label: Monday
+              value: mon
+            - label: Tuesday
+              value: tue
+            - label: Wednesday
+              value: wed
+            - label: Thursday
+              value: thu
+            - label: Friday
+              value: fri
+            - label: Saturday
+              value: sat
+            - label: Sunday
+              value: sun
+    power:
+      name: Power
+      description: Turn the AC on or off.
+      required: false
+      selector:
+        select:
+          options:
+            - label: "On"
+              value: "ON"
+            - label: "Off"
+              value: "OFF"
+    target_temperature:
+      name: Target Temperature
+      description: Target temperature in degrees Celsius.
+      required: false
+      example: 22
+      selector:
+        number:
+          min: 16
+          max: 30
+          step: 0.5
+          mode: box
+    operating_mode:
+      name: Operating Mode
+      description: HVAC operating mode.
+      required: false
+      selector:
+        select:
+          options:
+            - label: Cool
+              value: "COOL"
+            - label: Heat
+              value: "HEAT"
+            - label: Fan
+              value: "FAN"
+            - label: Dry
+              value: "DRY"
+            - label: Auto
+              value: "AUTO"
+
+timer:
+  name: Set AC Timer
+  description: Set a timer action for the AC unit.
+  target:
+    entity:
+      domain: climate
+      integration: equation_virtus_ac
+  fields:
+    duration:
+      name: Duration
+      description: Timer duration in minutes.
+      required: true
+      example: 60
+      selector:
+        number:
+          min: 1
+          max: 1440
+          step: 1
+          unit_of_measurement: minutes
+          mode: box
+    action:
+      name: Action
+      description: Action to perform when the timer expires.
+      required: true
+      selector:
+        select:
+          options:
+            - label: Turn On
+              value: "turn_on"
+            - label: Turn Off
+              value: "turn_off"
+    target_temperature:
+      name: Target Temperature
+      description: Target temperature (used when action is turn_on).
+      required: false
+      example: 22
+      selector:
+        number:
+          min: 16
+          max: 30
+          step: 0.5
+          mode: box
+    operating_mode:
+      name: Operating Mode
+      description: HVAC operating mode (used when action is turn_on).
+      required: false
+      selector:
+        select:
+          options:
+            - label: Cool
+              value: "COOL"
+            - label: Heat
+              value: "HEAT"
+            - label: Fan
+              value: "FAN"
+            - label: Dry
+              value: "DRY"
+            - label: Auto
+              value: "AUTO"

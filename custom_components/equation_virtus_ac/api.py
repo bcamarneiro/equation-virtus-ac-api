@@ -21,6 +21,8 @@ from .const import (
     ENDPOINT_CHECK_STATE,
     ENDPOINT_DASHBOARD,
     ENDPOINT_NODE_INFO,
+    ENDPOINT_SCHEDULE,
+    ENDPOINT_TIMER,
     TOKEN_URL,
 )
 
@@ -383,3 +385,103 @@ class EquationVirtusACApi:
         except (aiohttp.ClientError, KeyError) as err:
             _LOGGER.error("Error discovering devices: %s", err)
             return []
+
+    async def set_schedule(
+        self,
+        *,
+        time: str,
+        days: list[str],
+        power: str | None = None,
+        target_temperature: float | None = None,
+        operating_mode: str | None = None,
+    ) -> bool:
+        """Set a schedule for the AC unit.
+
+        Args:
+            time: Time in HH:MM format (24h).
+            days: List of day abbreviations (mon, tue, ...).
+            power: ON or OFF.
+            target_temperature: Target temperature in °C.
+            operating_mode: HVAC mode.
+
+        Returns:
+            True if the schedule was set successfully.
+        """
+        if not await self._ensure_token_valid():
+            return False
+
+        if not self._node_id:
+            _LOGGER.error("Node ID not set")
+            return False
+
+        url = BASE_URL + ENDPOINT_SCHEDULE.format(node_id=self._node_id)
+
+        payload: dict[str, Any] = {
+            "time": time,
+            "days": days,
+        }
+        if power is not None:
+            payload["power"] = power
+        if target_temperature is not None:
+            payload["targetTemperature"] = target_temperature
+        if operating_mode is not None:
+            payload["operatingMode"] = operating_mode
+
+        try:
+            async with self._session.post(url, headers=self._get_headers(), json=payload) as response:
+                if response.status in (200, 202):
+                    return True
+                _LOGGER.error("Failed to set schedule: %s", response.status)
+                return False
+
+        except aiohttp.ClientError as err:
+            _LOGGER.error("Error setting schedule: %s", err)
+            return False
+
+    async def set_timer(
+        self,
+        *,
+        duration: int,
+        action: str,
+        target_temperature: float | None = None,
+        operating_mode: str | None = None,
+    ) -> bool:
+        """Set a timer for the AC unit.
+
+        Args:
+            duration: Timer duration in minutes.
+            action: Action to perform (turn_on or turn_off).
+            target_temperature: Target temperature for turn_on.
+            operating_mode: HVAC mode for turn_on.
+
+        Returns:
+            True if the timer was set successfully.
+        """
+        if not await self._ensure_token_valid():
+            return False
+
+        if not self._node_id:
+            _LOGGER.error("Node ID not set")
+            return False
+
+        url = BASE_URL + ENDPOINT_TIMER.format(node_id=self._node_id)
+
+        payload: dict[str, Any] = {
+            "duration": duration,
+            "action": action,
+        }
+        if target_temperature is not None:
+            payload["targetTemperature"] = target_temperature
+        if operating_mode is not None:
+            payload["operatingMode"] = operating_mode
+
+        try:
+            async with self._session.post(url, headers=self._get_headers(), json=payload) as response:
+                if response.status in (200, 202):
+                    return True
+                _LOGGER.error("Failed to set timer: %s", response.status)
+                return False
+
+        except aiohttp.ClientError as err:
+            _LOGGER.error("Error setting timer: %s", err)
+            return False
