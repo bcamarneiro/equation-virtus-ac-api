@@ -246,8 +246,21 @@ class EquationVirtusACApi:
         sleep_mode: bool | None = None,
         swing_horizontal: str | None = None,
         swing_vertical: str | None = None,
+        verify_timeout: int = 10,
+        verify_retries: int = 3,
     ) -> bool:
-        """Set the state of the AC."""
+        """Set the state of the AC.
+
+        Args:
+            verify_timeout: Seconds to wait between verification attempts.
+            verify_retries: Number of verification attempts before giving up.
+
+        Returns:
+            True if state was set and verified, False otherwise.
+
+        Raises:
+            RuntimeError: If command succeeded but state verification failed.
+        """
         if not await self._ensure_token_valid():
             return False
 
@@ -280,14 +293,64 @@ class EquationVirtusACApi:
 
         try:
             async with self._session.post(url, headers=self._get_headers(), json=payload) as response:
-                if response.status == 202:
-                    return True
-                _LOGGER.error("Failed to set state: %s", response.status)
-                return False
+                if response.status != 202:
+                    _LOGGER.error("Failed to set state: %s", response.status)
+                    return False
+
+                _LOGGER.debug("State change command accepted (202), verifying...")
 
         except aiohttp.ClientError as err:
             _LOGGER.error("Error setting state: %s", err)
             return False
+
+        for attempt in range(verify_retries):
+            await asyncio.sleep(verify_timeout)
+
+            current_state = await self.get_state()
+            if current_state is None:
+                _LOGGER.warning("Verification attempt %d/%d: failed to read state", attempt + 1, verify_retries)
+                continue
+
+            mismatches = []
+            if power is not None and current_state.power != power:
+                mismatches.append(f"power: expected {power}, got {current_state.power}")
+            if target_temperature is not None and current_state.target_temperature != target_temperature:
+                mismatches.append(f"target_temperature: expected {target_temperature}, got {current_state.target_temperature}")
+            if operating_mode is not None and current_state.operating_mode != operating_mode:
+                mismatches.append(f"operating_mode: expected {operating_mode}, got {current_state.operating_mode}")
+            if fan_speed is not None and current_state.fan_speed != fan_speed:
+                mismatches.append(f"fan_speed: expected {fan_speed}, got {current_state.fan_speed}")
+            if health_mode is not None and current_state.health_mode != health_mode:
+                mismatches.append(f"health_mode: expected {health_mode}, got {current_state.health_mode}")
+            if frost_protection_mode is not None and current_state.frost_protection_mode != frost_protection_mode:
+                mismatches.append(f"frost_protection_mode: expected {frost_protection_mode}, got {current_state.frost_protection_mode}")
+            if self_clean_mode is not None and current_state.self_clean_mode != self_clean_mode:
+                mismatches.append(f"self_clean_mode: expected {self_clean_mode}, got {current_state.self_clean_mode}")
+            if quiet_mode is not None and current_state.quiet_mode != quiet_mode:
+                mismatches.append(f"quiet_mode: expected {quiet_mode}, got {current_state.quiet_mode}")
+            if sleep_mode is not None and current_state.sleep_mode != sleep_mode:
+                mismatches.append(f"sleep_mode: expected {sleep_mode}, got {current_state.sleep_mode}")
+            if swing_horizontal is not None and current_state.swing_orientation.horizontal != swing_horizontal:
+                mismatches.append(f"swing_horizontal: expected {swing_horizontal}, got {current_state.swing_orientation.horizontal}")
+            if swing_vertical is not None and current_state.swing_orientation.vertical != swing_vertical:
+                mismatches.append(f"swing_vertical: expected {swing_vertical}, got {current_state.swing_orientation.vertical}")
+
+            if not mismatches:
+                _LOGGER.debug("State verification successful")
+                return True
+
+            _LOGGER.warning(
+                "Verification attempt %d/%d: state mismatch - %s",
+                attempt + 1,
+                verify_retries,
+                "; ".join(mismatches),
+            )
+
+        _LOGGER.error("State verification failed after %d attempts", verify_retries)
+        raise RuntimeError(
+            f"Command succeeded but state verification failed after {verify_retries} attempts. "
+            f"Expected state does not match device state."
+        )
 
     async def get_error(self) -> dict[str, Any] | None:
         """Get any error codes from the AC."""
