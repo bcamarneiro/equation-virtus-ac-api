@@ -20,6 +20,8 @@ from .const import (
     ENDPOINT_CHECK_ERROR,
     ENDPOINT_CHECK_STATE,
     ENDPOINT_DASHBOARD,
+    ENDPOINT_ENERGY_CONSUMPTION,
+    ENDPOINT_ENERGY_CURRENT,
     ENDPOINT_NODE_INFO,
     TOKEN_URL,
 )
@@ -65,6 +67,16 @@ class DeviceInfo:
     model_number: str
     factory_id: str
     icon: str
+
+
+@dataclass
+class EnergyData:
+    """Energy consumption data."""
+
+    current_power: float
+    daily_consumption: float
+    monthly_consumption: float
+    last_updated: str
 
 
 class EquationVirtusACApi:
@@ -383,3 +395,61 @@ class EquationVirtusACApi:
         except (aiohttp.ClientError, KeyError) as err:
             _LOGGER.error("Error discovering devices: %s", err)
             return []
+
+    async def get_energy_current(self) -> EnergyData | None:
+        """Get real-time energy consumption data."""
+        if not await self._ensure_token_valid():
+            return None
+
+        if not self._node_id:
+            _LOGGER.error("Node ID not set")
+            return None
+
+        url = BASE_URL + ENDPOINT_ENERGY_CURRENT.format(node_id=self._node_id)
+
+        try:
+            async with self._session.get(url, headers=self._get_headers(API_KEY_NODE)) as response:
+                if response.status != 200:
+                    _LOGGER.error("Failed to get energy current: %s", response.status)
+                    return None
+
+                data = await response.json()
+                return EnergyData(
+                    current_power=data.get("currentPower", 0),
+                    daily_consumption=data.get("dailyConsumption", 0),
+                    monthly_consumption=data.get("monthlyConsumption", 0),
+                    last_updated=data.get("lastUpdated", ""),
+                )
+
+        except (aiohttp.ClientError, KeyError) as err:
+            _LOGGER.error("Error getting energy current: %s", err)
+            return None
+
+    async def get_energy_consumption(self) -> EnergyData | None:
+        """Get cumulative energy consumption data."""
+        if not await self._ensure_token_valid():
+            return None
+
+        if not self._node_id:
+            _LOGGER.error("Node ID not set")
+            return None
+
+        url = BASE_URL + ENDPOINT_ENERGY_CONSUMPTION.format(node_id=self._node_id)
+
+        try:
+            async with self._session.get(url, headers=self._get_headers(API_KEY_NODE)) as response:
+                if response.status != 200:
+                    _LOGGER.error("Failed to get energy consumption: %s", response.status)
+                    return None
+
+                data = await response.json()
+                return EnergyData(
+                    current_power=data.get("currentPower", 0),
+                    daily_consumption=data.get("dailyConsumption", 0),
+                    monthly_consumption=data.get("monthlyConsumption", 0),
+                    last_updated=data.get("lastUpdated", ""),
+                )
+
+        except (aiohttp.ClientError, KeyError) as err:
+            _LOGGER.error("Error getting energy consumption: %s", err)
+            return None
