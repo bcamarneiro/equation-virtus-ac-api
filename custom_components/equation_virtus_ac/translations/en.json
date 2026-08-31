@@ -38,23 +38,30 @@
           "password": "Password"
         }
       },
+      "home_select": {
+        "title": "Select Home",
+        "description": "Select the home where your AC is installed. {count} home(s) found.",
+        "data": {
+          "home_id": "Home"
+        }
+      },
       "home": {
-        "title": "Home ID",
-        "description": "Enter your Home ID from the Enki app.\n\nYou can find this in the app settings or by using tools like mitmproxy to inspect network traffic.",
+        "title": "Home ID (Legacy)",
+        "description": "Auto-discovery did not find any homes. Enter your Home ID from the Enki app.\n\n{info}",
         "data": {
           "home_id": "Home ID"
         }
       },
       "device": {
         "title": "Select Device",
-        "description": "Select the AC device you want to add.",
+        "description": "Select the AC device in home {home_id}.",
         "data": {
           "node_id": "Device"
         }
       },
       "manual": {
-        "title": "Manual Configuration",
-        "description": "Enter the Node ID manually if device discovery failed.",
+        "title": "Manual Configuration (Legacy)",
+        "description": "Auto-discovery did not find your device. Enter the Node ID manually.\n\n{info}",
         "data": {
           "node_id": "Node ID"
         }
