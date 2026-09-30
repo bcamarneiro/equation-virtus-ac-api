@@ -132,7 +132,7 @@ class EquationVirtusACApi:
                 self._access_token = result["access_token"]
                 self._refresh_token = result["refresh_token"]
                 expires_in = result.get("expires_in", 7200)
-                self._token_expires = datetime.now() + timedelta(seconds=expires_in - 60)
+                self._token_expires = datetime.now() + timedelta(seconds=expires_in - 300)
                 return True
 
         except aiohttp.ClientError as err:
@@ -160,7 +160,7 @@ class EquationVirtusACApi:
                 self._access_token = result["access_token"]
                 self._refresh_token = result["refresh_token"]
                 expires_in = result.get("expires_in", 7200)
-                self._token_expires = datetime.now() + timedelta(seconds=expires_in - 60)
+                self._token_expires = datetime.now() + timedelta(seconds=expires_in - 300)
                 return True
 
         except aiohttp.ClientError as err:
